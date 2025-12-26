@@ -13,17 +13,18 @@ The game supports **2 to 6 players** and offers both **LAN multiplayer** and **o
 
 ## 📸 Screenshots
 
-| Gameplay | Lobby | Cards |
+| Lobby | Create Room | LAN Automatic discovery |
 |---------|--------|-------|
 | ![](https://github.com/user-attachments/assets/3428a150-1de4-44d9-a5c4-e88a87838ce7) | ![](https://github.com/user-attachments/assets/4344c07d-4a4b-46b8-99a1-5370cc682aa4) | ![](https://github.com/user-attachments/assets/327d9dad-ff75-4b47-9a42-d88d8c47e137) |
 
-| Match Start | In-Game UI | Player Turn |
+| Game Screen | Matching Cards | Round Results |
 |------------|-----------|-------------|
 | ![](https://github.com/user-attachments/assets/6a60dc25-a212-49a6-91a9-6353a19dca4f) | ![](https://github.com/user-attachments/assets/c8c176bf-bd0f-4a62-8067-4bb3476a9363) | ![](https://github.com/user-attachments/assets/44ac4fcf-506a-455d-9381-f6538f928887) |
 
-| End Game | Results | Multiplayer |
+| Settings | Game Rules | Multiplayer |
 |----------|---------|-------------|
-| ![](https://github.com/user-attachments/assets/87f3cc8b-dae0-41c1-b202-fea0159bc16e) | ![](https://github.com/user-attachments/assets/d8e2e135-b8fe-44eb-a099-a164cf28340b) |  |
+| ![](https://github.com/user-attachments/assets/87f3cc8b-dae0-41c1-b202-fea0159bc16e) | ![](https://github.com/user-attachments/assets/d8e2e135-b8fe-44eb-a099-a164cf28340b) |![WhatsApp Image 2025-12-25 at 1 53 58 AM (3)](https://github.com/user-attachments/assets/4ca242af-89de-4a56-93a8-f811f294773c)
+  |
 
 ---
 
