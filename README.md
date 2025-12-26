@@ -11,6 +11,12 @@ The game supports **2 to 6 players** and offers both **LAN multiplayer** and **o
 
 ---
 
+## 📸 Screenshots
+
+Screenshots will be added here.
+
+---
+
 ## 📌 Project Overview
 
 ElShayeb brings a traditional Egyptian card game into the modern digital world.  
@@ -73,16 +79,6 @@ Models (Player, Card, Game State)
 
 ---
 
-## 🧪 Testing
-
-```bash
-flutter test
-```
-
-Includes unit tests, widget tests, and BLoC state validation.
-
----
-
 ## 📁 Folder Structure
 
 ```
@@ -127,16 +123,10 @@ flutter run
 
 ---
 
-## 📸 Screenshots
-
-Screenshots will be added here.
-
----
-
 ## 🌐 Social Links
 
 - GitHub: https://github.com/your-username/elshayeb
-- Email: your-email@example.com
+- Email: muhdashrafatef@gmail.com
 
 ---
 
