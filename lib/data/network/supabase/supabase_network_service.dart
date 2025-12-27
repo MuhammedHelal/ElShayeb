@@ -82,20 +82,34 @@ class SupabaseNetworkService implements OnlineNetworkService {
     final userId = _client!.auth.currentUser!.id;
 
     try {
-      // Pure Realtime: No Database Insert requires.
-      // The room exists purely as a transient Realtime channel.
-      final roomId =
-          initialGameState['roomCode']; // Use the code from game logic
+      final roomId = initialGameState['roomCode'];
+      // final hostId = initialGameState['hostId']; // NOT USED for DB ownership
 
-      // Subscribe to channel
+      // Use the actual Supabase Auth ID for the database ownership
+      // This ensures RLS policies work correctly (host_id = auth.uid())
+      final dbHostId = userId;
+
+      // 1. Create entry in Database
+      await _client!.from('rooms').insert({
+        'room_code': roomId,
+        'host_id': dbHostId,
+        'game_state': initialGameState,
+        'status': 'waiting',
+      });
+
+      log('Room created in DB: $roomId');
+
+      // 2. Subscribe to channel (for Presence + Realtime DB Updates)
       await _channels!.subscribeToRoom(roomId, userId, {
         'isHost': true,
         'name': initialGameState['hostName'] ?? 'Host',
+        'id': initialGameState['hostId'],
       });
 
       _currentRoomId = roomId;
       return roomId;
     } catch (e) {
+      log('Create Room Error: $e');
       throw RoomException('Failed to create room', e);
     }
   }
@@ -106,6 +120,34 @@ class SupabaseNetworkService implements OnlineNetworkService {
     final userId = _client!.auth.currentUser!.id;
 
     try {
+      log('Joining room: $roomId');
+
+      // 1. Fetch initial state from DB (Startup Sync)
+      try {
+        final roomData = await _client!
+            .from('rooms')
+            .select()
+            .eq('room_code', roomId)
+            .single();
+
+        log('Fetched room data from DB: ${roomData['id']}');
+
+        // Immediately notify listener of initial state
+        if (roomData.containsKey('game_state')) {
+          final state = roomData['game_state'] as Map<String, dynamic>;
+          _eventsController.add(GenericGameEvent(
+            type: OnlineEventTypes.stateSync,
+            data: {'state': state},
+            timestamp: DateTime.now(),
+            senderId: 'system',
+          ));
+        }
+      } catch (e) {
+        log('Warning: Could not fetch initial room state from DB: $e');
+        // Continue anyway, maybe it's a legacy room or transient
+      }
+
+      // 2. Subscribe to channel
       await _channels!.subscribeToRoom(roomId, userId, playerData);
       _currentRoomId = roomId;
     } catch (e) {
@@ -130,16 +172,17 @@ class SupabaseNetworkService implements OnlineNetworkService {
 
   @override
   Future<void> updateState(Map<String, dynamic> stateData) async {
-    if (_channels != null && _currentRoomId != null) {
+    if (_currentRoomId != null) {
       try {
-        await _channels!.broadcastEvent(GenericGameEvent(
-          type: OnlineEventTypes.stateSync,
-          data: {'state': stateData},
-          timestamp: DateTime.now(),
-          senderId: currentUserId,
-        ));
+        // Update the persistset state in Database
+        // This triggers the Postgres Change event for all listeners
+        log('SupabaseNetworkService: Updating state in DB for room $_currentRoomId');
+        await _client!
+            .from('rooms')
+            .update({'game_state': stateData}).eq('room_code', _currentRoomId!);
       } catch (e) {
-        log('Failed to update state: $e');
+        log('Failed to update state in DB: $e');
+        // Fallback or retry logic could go here
       }
     }
   }

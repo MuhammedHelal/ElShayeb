@@ -14,6 +14,7 @@ class _SettingsKeys {
   static const sfxVolume = 'sfx_volume';
   static const playerName = 'player_name';
   static const avatarId = 'avatar_id';
+  static const localeCode = 'locale_code';
 }
 
 /// Repository for app settings persistence
@@ -72,5 +73,18 @@ class SettingsRepository {
 
   Future<void> setAvatarId(String id) async {
     await _prefs.setString(_SettingsKeys.avatarId, id);
+  }
+
+  // ============ Locale ============
+
+  /// Returns saved locale code, null if not set (use device default)
+  String? get localeCode => _prefs.getString(_SettingsKeys.localeCode);
+
+  Future<void> setLocaleCode(String? code) async {
+    if (code == null) {
+      await _prefs.remove(_SettingsKeys.localeCode);
+    } else {
+      await _prefs.setString(_SettingsKeys.localeCode, code);
+    }
   }
 }

@@ -149,4 +149,35 @@ abstract class AppStrings {
   static String get errorEnterIp => 'error_enter_ip'.tr();
   static String get errorEnterPort => 'error_enter_port'.tr();
   static String get errorEnterRoomCode => 'error_enter_room_code'.tr();
+
+  // Language settings
+  static String get settingsLanguage => 'settings_language'.tr();
+  static String get languageEnglish => 'language_english'.tr();
+  static String get languageArabic => 'language_arabic'.tr();
+
+  // Game Events (localized messages)
+  static String eventPlayerCreatedRoom(String name) =>
+      'event_player_created_room'.tr(namedArgs: {'name': name});
+  static String eventPlayerJoining(String name) =>
+      'event_player_joining'.tr(namedArgs: {'name': name});
+  static String eventPlayerJoined(String name) =>
+      'event_player_joined'.tr(namedArgs: {'name': name});
+  static String eventPlayerMadePair(String name, String card) =>
+      'event_player_made_pair'.tr(namedArgs: {'name': name, 'card': card});
+  static String eventPlayerDrewCard(String name) =>
+      'event_player_drew_card'.tr(namedArgs: {'name': name});
+  static String eventPlayerStoleCard(String name, String target) =>
+      'event_player_stole_card'.tr(namedArgs: {'name': name, 'target': target});
+  static String eventPlayerFinished(String name) =>
+      'event_player_finished'.tr(namedArgs: {'name': name});
+  static String eventPlayerShuffled(String name) =>
+      'event_player_shuffled'.tr(namedArgs: {'name': name});
+  static String eventPlayerDisconnected(String name) =>
+      'event_player_disconnected'.tr(namedArgs: {'name': name});
+  static String get eventGameStarted => 'event_game_started'.tr();
+  static String get eventRoundEnded => 'event_round_ended'.tr();
+  static String get eventNewRoundStarted => 'event_new_round_started'.tr();
+  static String get eventRoundStarted => 'event_round_started'.tr();
+  static String get eventStateSync => 'event_state_sync'.tr();
+  static String get eventInvalidDraw => 'event_invalid_draw'.tr();
 }

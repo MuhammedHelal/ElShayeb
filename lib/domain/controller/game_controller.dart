@@ -5,6 +5,7 @@
 /// but delegates to the rules engine for all decisions.
 library;
 
+import 'dart:async';
 import 'dart:developer';
 
 import '../entities/entities.dart';
@@ -115,11 +116,15 @@ class GameController {
     _emitEvent(GameEvent(
       type: GameEventType.playerJoined,
       message: '${hostPlayer.name} created the room',
+      messageKey: 'event_player_created_room',
+      messageParams: {'name': hostPlayer.name},
       data: {'playerId': hostPlayer.id},
     ));
 
     _notifyStateChange();
   }
+
+  Timer? _stateRequestTimer;
 
   /// Client joins an existing game
   Future<void> joinGame(Player player, String hostAddress, int port) async {
@@ -128,11 +133,37 @@ class GameController {
 
     await _networkManager.connectToHost(hostAddress, port, player);
 
+    // Initial Request
+    await _sendStateRequest();
+
+    // Retry requesting state every 2 seconds until we get it
+    // This handles race conditions where the host might not see the join event
+    // or the initial broadcast is missed.
+    _stateRequestTimer?.cancel();
+    _stateRequestTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (_state.roomCode.isEmpty) {
+        log('State not synced yet, retrying request...');
+        _sendStateRequest();
+      } else {
+        timer.cancel();
+      }
+    });
+
     _emitEvent(GameEvent(
       type: GameEventType.playerJoined,
       message: '${player.name} is joining...',
+      messageKey: 'event_player_joining',
+      messageParams: {'name': player.name},
       data: {'playerId': player.id},
     ));
+  }
+
+  Future<void> _sendStateRequest() async {
+    if (_localPlayerId == null) return;
+    await _networkManager.sendAction({
+      'type': 'request_state',
+      'playerId': _localPlayerId,
+    });
   }
 
   /// Host starts the game
@@ -149,6 +180,7 @@ class GameController {
       _emitEvent(GameEvent(
         type: GameEventType.gameStarted,
         message: 'Game started!',
+        messageKey: 'event_game_started',
       ));
 
       // Then broadcast to clients (async)
@@ -167,11 +199,14 @@ class GameController {
   Future<void> drawCard(String targetPlayerId, [int? cardIndex]) async {
     if (_localPlayerId == null) return;
 
+    log('GameController: drawCard initiated. IsHost: $_isHost');
+
     if (_isHost) {
       // Host executes directly
       _executeDrawAction(_localPlayerId!, targetPlayerId, cardIndex);
     } else {
       // Client sends action to host
+      log('GameController: Sending draw action to host');
       await _networkManager.sendAction({
         'type': 'draw',
         'drawerId': _localPlayerId,
@@ -183,10 +218,12 @@ class GameController {
 
   /// Host executes a draw action
   void _executeDrawAction(String drawerId, String targetId, [int? cardIndex]) {
+    log('GameController: Executing draw action for $drawerId targeting $targetId');
     if (!_rulesEngine.isValidDraw(_state, drawerId, targetId)) {
       _emitEvent(GameEvent(
         type: GameEventType.error,
         message: 'Invalid draw action',
+        messageKey: 'event_invalid_draw',
       ));
       return;
     }
@@ -198,12 +235,33 @@ class GameController {
       _state = _rulesEngine.applyDrawResult(_state, result);
 
       String message;
+      String messageKey;
+      Map<String, String> messageParams;
+
       if (result.madeMatch) {
         message =
             '${result.updatedDrawer.name} made a pair with ${result.drawnCard?.displayName}!';
+        messageKey = 'event_player_made_pair';
+        messageParams = {
+          'name': result.updatedDrawer.name,
+          'card': result.drawnCard?.displayName ?? '',
+        };
         _emitEvent(GameEvent(
           type: GameEventType.pairRemoved,
           message: message,
+          messageKey: messageKey,
+          messageParams: messageParams,
+          data: {
+            'card1': result.drawnCard?.toJson(),
+            'card2': result.matchedCard?.toJson(),
+          },
+        ));
+        // Broadcast pair match so clients know to show messages/animations if needed
+        _networkManager.broadcastEvent(GameEvent(
+          type: GameEventType.pairRemoved,
+          message: message,
+          messageKey: messageKey,
+          messageParams: messageParams,
           data: {
             'card1': result.drawnCard?.toJson(),
             'card2': result.matchedCard?.toJson(),
@@ -211,9 +269,23 @@ class GameController {
         ));
       } else {
         message = '${result.updatedDrawer.name} drew a card';
+        messageKey = 'event_player_drew_card';
+        messageParams = {'name': result.updatedDrawer.name};
         _emitEvent(GameEvent(
           type: GameEventType.cardDrawn,
           message: message,
+          messageKey: messageKey,
+          messageParams: messageParams,
+          data: {
+            'stealerId': drawerId,
+            'victimId': targetId,
+          },
+        ));
+        _networkManager.broadcastEvent(GameEvent(
+          type: GameEventType.cardDrawn,
+          message: message,
+          messageKey: messageKey,
+          messageParams: messageParams,
           data: {
             'stealerId': drawerId,
             'victimId': targetId,
@@ -222,11 +294,15 @@ class GameController {
       }
 
       // Always emit cardStolen for animation (separate from match/draw event)
-      // Always emit cardStolen for animation (separate from match/draw event)
       final stealEvent = GameEvent(
         type: GameEventType.cardStolen,
         message:
             '${result.updatedDrawer.name} stole a card from ${result.updatedTarget.name}',
+        messageKey: 'event_player_stole_card',
+        messageParams: {
+          'name': result.updatedDrawer.name,
+          'target': result.updatedTarget.name,
+        },
         data: {
           'stealerId': drawerId,
           'victimId': targetId,
@@ -250,6 +326,8 @@ class GameController {
         _emitEvent(GameEvent(
           type: GameEventType.playerFinished,
           message: finishedMsg,
+          messageKey: 'event_player_finished',
+          messageParams: {'name': result.updatedDrawer.name},
           data: {'playerId': result.updatedDrawer.id},
         ));
       }
@@ -262,6 +340,7 @@ class GameController {
         _emitEvent(GameEvent(
           type: GameEventType.roundEnded,
           message: endMsg,
+          messageKey: 'event_round_ended',
         ));
       }
 
@@ -282,6 +361,7 @@ class GameController {
     _emitEvent(GameEvent(
       type: GameEventType.gameStarted,
       message: 'New round started!',
+      messageKey: 'event_new_round_started',
     ));
 
     _notifyStateChange();
@@ -289,11 +369,13 @@ class GameController {
 
   /// Handle state update from network (client receives from host)
   void _handleNetworkStateUpdate(GameState newState) {
+    _stateRequestTimer?.cancel();
     _updateState(newState);
 
     _emitEvent(GameEvent(
       type: GameEventType.stateSync,
       message: newState.lastAction ?? 'State synchronized',
+      messageKey: 'event_state_sync',
     ));
   }
 
@@ -305,6 +387,7 @@ class GameController {
 
   /// Handle player action from network (host receives from client)
   void _handlePlayerAction(Map<String, dynamic> action) {
+    log('GameController: Received player action: $action');
     if (!_isHost) return;
 
     final type = action['type'] as String?;
@@ -318,12 +401,15 @@ class GameController {
         break;
       case 'join':
         final player =
-            Player.fromJson(action['player'] as Map<String, dynamic>);
+            Player.fromJoinData(action['player'] as Map<String, dynamic>);
         _handlePlayerJoin(player);
         break;
       case 'shuffle':
         final playerId = action['playerId'] as String;
         _executeShuffleAction(playerId);
+        break;
+      case 'request_state':
+        _networkManager.broadcastState(_state);
         break;
     }
   }
@@ -374,6 +460,8 @@ class GameController {
       _emitEvent(GameEvent(
         type: GameEventType.playerJoined,
         message: '${player.name} joined the game',
+        messageKey: 'event_player_joined',
+        messageParams: {'name': player.name},
         data: {'playerId': player.id},
       ));
 
@@ -399,6 +487,8 @@ class GameController {
       _emitEvent(GameEvent(
         type: GameEventType.playerLeft,
         message: '${player.name} disconnected',
+        messageKey: 'event_player_disconnected',
+        messageParams: {'name': player.name},
         data: {'playerId': playerId},
       ));
     }
@@ -413,6 +503,7 @@ class GameController {
 
   /// Dispose resources
   void dispose() {
+    _stateRequestTimer?.cancel();
     _eventListeners.clear();
     _stateListeners.clear();
     _networkManager.dispose();

@@ -17,6 +17,7 @@ class SettingsState extends Equatable {
   final double sfxVolume;
   final String playerName;
   final String avatarId;
+  final String? localeCode; // null = use device default
 
   const SettingsState({
     this.isMusicEnabled = true,
@@ -26,6 +27,7 @@ class SettingsState extends Equatable {
     this.sfxVolume = 0.8,
     this.playerName = 'Player',
     this.avatarId = 'avatar_1',
+    this.localeCode,
   });
 
   SettingsState copyWith({
@@ -36,6 +38,8 @@ class SettingsState extends Equatable {
     double? sfxVolume,
     String? playerName,
     String? avatarId,
+    String? localeCode,
+    bool clearLocaleCode = false,
   }) {
     return SettingsState(
       isMusicEnabled: isMusicEnabled ?? this.isMusicEnabled,
@@ -45,6 +49,7 @@ class SettingsState extends Equatable {
       sfxVolume: sfxVolume ?? this.sfxVolume,
       playerName: playerName ?? this.playerName,
       avatarId: avatarId ?? this.avatarId,
+      localeCode: clearLocaleCode ? null : (localeCode ?? this.localeCode),
     );
   }
 
@@ -57,6 +62,7 @@ class SettingsState extends Equatable {
         sfxVolume,
         playerName,
         avatarId,
+        localeCode,
       ];
 }
 
@@ -85,6 +91,7 @@ class SettingsCubit extends Cubit<SettingsState> {
       sfxVolume: _repository.sfxVolume,
       playerName: _repository.playerName,
       avatarId: _repository.avatarId,
+      localeCode: _repository.localeCode,
     ));
 
     // Apply to managers
@@ -143,5 +150,15 @@ class SettingsCubit extends Cubit<SettingsState> {
   Future<void> setAvatarId(String id) async {
     await _repository.setAvatarId(id);
     emit(state.copyWith(avatarId: id));
+  }
+
+  /// Set locale code (null to use device default)
+  Future<void> setLocaleCode(String? code) async {
+    await _repository.setLocaleCode(code);
+    if (code == null) {
+      emit(state.copyWith(clearLocaleCode: true));
+    } else {
+      emit(state.copyWith(localeCode: code));
+    }
   }
 }

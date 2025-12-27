@@ -125,4 +125,20 @@ class Player extends Equatable {
       isConnected: json['isConnected'] as bool,
     );
   }
+
+  /// Create from minimal join data (for online presence join events)
+  /// Only requires id, name, avatarId - other fields have defaults
+  factory Player.fromJoinData(Map<String, dynamic> json) {
+    return Player(
+      id: json['id'] as String? ?? json['player_id'] as String? ?? '',
+      name: json['name'] as String? ?? 'Player',
+      avatarId: json['avatarId'] as String? ?? 'avatar_1',
+      hand: const [],
+      score: 0,
+      status: PlayerStatus.playing,
+      finishPosition: 0,
+      isHost: json['isHost'] as bool? ?? false,
+      isConnected: true,
+    );
+  }
 }

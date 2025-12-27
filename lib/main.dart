@@ -4,11 +4,13 @@
 /// Initializes dependencies and launches the app.
 library;
 
-import 'package:easy_localization/easy_localization.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'core/constants/supabase_constants.dart';
 import 'core/localization/localization_service.dart';
 import 'injection_container.dart';
 import 'presentation/presentation.dart';
@@ -19,6 +21,12 @@ void main() async {
 
   // Initialize easy_localization
   await EasyLocalization.ensureInitialized();
+
+  // Initialize Supabase
+  await Supabase.initialize(
+    url: SupabaseConstants.url,
+    anonKey: SupabaseConstants.anonKey,
+  );
 
   // Lock orientation to portrait
   await SystemChrome.setPreferredOrientations([
@@ -74,6 +82,15 @@ class ElShayebApp extends StatelessWidget {
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,
         locale: context.locale,
+        // RTL support builder
+        builder: (context, child) {
+          return Directionality(
+            textDirection: context.locale.languageCode == 'ar'
+                ? TextDirection.rtl
+                : TextDirection.ltr,
+            child: child!,
+          );
+        },
         home: const HomeScreen(),
         routes: {
           '/home': (_) => const HomeScreen(),

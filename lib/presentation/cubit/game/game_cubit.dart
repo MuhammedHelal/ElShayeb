@@ -6,6 +6,7 @@ library;
 
 import 'dart:developer';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 
@@ -223,7 +224,7 @@ class GameCubit extends Cubit<GameUiState> {
         roomId: '',
         roomCode: '',
         hostId: '',
-      );
+      ).copyWith(players: [player]); // Add local player to initial dummy state
 
       _gameController = GameController(
         rulesEngine: GameRulesEngine(),
@@ -245,6 +246,8 @@ class GameCubit extends Cubit<GameUiState> {
         isConnecting: false,
         isHost: false,
         localPlayerId: playerId,
+        gameState: _gameController!.state, // Now contains local player
+        lastEventMessage: "Waiting for state...",
       ));
 
       _audioManager.playSoundEffect(SoundEffect.deal);
@@ -434,10 +437,22 @@ class GameCubit extends Cubit<GameUiState> {
 
   /// Handle game events from controller
   void _handleGameEvent(GameEvent event) {
+    // Translate event message using localization key if available
+    final localizedMessage = _getLocalizedEventMessage(event);
+
+    // Helper to safely play sound
+    void safePlaySound(SoundEffect effect) {
+      try {
+        _audioManager.playSoundEffect(effect);
+      } catch (e) {
+        log('Error playing sound effect: $e');
+      }
+    }
+
     switch (event.type) {
       case GameEventType.pairRemoved:
         // Match animation is now handled in selectCardToDraw
-        emit(state.copyWith(lastEventMessage: event.message));
+        emit(state.copyWith(lastEventMessage: localizedMessage));
         break;
 
       case GameEventType.cardStolen:
@@ -466,29 +481,53 @@ class GameCubit extends Cubit<GameUiState> {
         break;
 
       case GameEventType.playerFinished:
-        _audioManager.playSoundEffect(SoundEffect.win);
+        safePlaySound(SoundEffect.win);
         _hapticManager.victory();
-        emit(state.copyWith(lastEventMessage: event.message));
+        emit(state.copyWith(lastEventMessage: localizedMessage));
         break;
 
       case GameEventType.roundEnded:
         final localPlayer = state.localPlayer;
         if (localPlayer?.isShayeb == true) {
-          _audioManager.playSoundEffect(SoundEffect.lose);
+          safePlaySound(SoundEffect.lose);
           _hapticManager.defeat();
         } else {
-          _audioManager.playSoundEffect(SoundEffect.win);
+          safePlaySound(SoundEffect.win);
           _hapticManager.victory();
         }
-        emit(state.copyWith(lastEventMessage: event.message));
+        emit(state.copyWith(lastEventMessage: localizedMessage));
         break;
 
       case GameEventType.error:
-        emit(state.copyWith(error: event.message));
+        emit(state.copyWith(error: localizedMessage));
         break;
 
       default:
-        emit(state.copyWith(lastEventMessage: event.message));
+        emit(state.copyWith(lastEventMessage: localizedMessage));
+    }
+  }
+
+  /// Get localized message from event
+  String _getLocalizedEventMessage(GameEvent event) {
+    // If no message key, return fallback message
+    if (event.messageKey == null) {
+      return event.message;
+    }
+
+    try {
+      // Use the translation key with parameters
+      final key = event.messageKey!;
+      final params = event.messageParams;
+
+      if (params != null && params.isNotEmpty) {
+        return key.tr(namedArgs: params);
+      } else {
+        return key.tr();
+      }
+    } catch (e) {
+      log('Error translating event message: $e');
+      // Fallback to the English message
+      return event.message;
     }
   }
 
@@ -503,6 +542,7 @@ class GameCubit extends Cubit<GameUiState> {
       gameState: gameState,
       status: LoadingStatus.success,
       lastEventMessage: gameState.lastAction,
+      isConnecting: false,
     ));
   }
 

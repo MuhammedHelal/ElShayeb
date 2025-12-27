@@ -71,6 +71,7 @@ class OnlineNetworkManager implements NetworkManager {
       final roomId = await _networkService.createRoom({
         'roomCode': initialState.roomCode,
         'hostName': initialState.players.first.name,
+        'hostId': initialState.hostId,
         'initialState': initialState.toJson(),
       });
 
@@ -107,11 +108,9 @@ class OnlineNetworkManager implements NetworkManager {
       _currentRoomId = roomId;
 
       // Notify we joined - sending a "join" action to host
-      // In Supabase, the presence join might handle this, but explicit action is safer for game logic
-      await sendAction({
-        'type': 'join',
-        'player': player.toJson(),
-      });
+      // In Supabase, the presence join handles this now.
+      // We removed the explicit action to prevent race conditions and rely on presence.
+      log('Joined room $roomId via Supabase Presence');
     } catch (e) {
       log('Error connecting to host: $e');
       _currentRoomId = null;
@@ -184,6 +183,7 @@ class OnlineNetworkManager implements NetworkManager {
     try {
       // 1. State Sync (Clients receive state)
       if (event.type == OnlineEventTypes.stateSync) {
+        log('Received State Sync Event');
         if (!_isHosting) {
           // Host ignores state sync (it is the source of truth)
           if (event.data['state'] == null) {
@@ -191,14 +191,18 @@ class OnlineNetworkManager implements NetworkManager {
             return;
           }
           final stateData = event.data['state'] as Map<String, dynamic>;
+          log('Updating local state from network sync');
           final state = GameState.fromJson(stateData);
           onStateUpdate?.call(state);
+        } else {
+          log('Host ignored state sync event (Self-Reflection)');
         }
         return;
       }
 
       // 2. Game Actions / Events
       if (event.type == OnlineEventTypes.gameAction) {
+        log('Received Game Action: ${event.data}');
         final data = event.data;
 
         // Check if it's a generic GameEvent (broadcasted by host to everyone)
@@ -219,6 +223,7 @@ class OnlineNetworkManager implements NetworkManager {
 
         // Check if it's a Player Action (sent by client to host)
         if (data.containsKey('isPlayerAction') && _isHosting) {
+          log('Processing Player Action as Host');
           final action = data['actionPayload'] as Map<String, dynamic>;
           onPlayerAction?.call(action);
           return;
@@ -227,16 +232,27 @@ class OnlineNetworkManager implements NetworkManager {
 
       // 3. Player Joined (Presence)
       if (event.type == OnlineEventTypes.playerJoined) {
-        log('Player Joined Event: ${event.data}');
+        log('Player Joined Event (Presence): ${event.data}');
 
-        // If we are host, we need to process this as a 'join' action to add player to GameState
+        final playerId = event.senderId;
+        if (playerId == _localPlayerId) {
+          // Ignore our own presence event to prevent double-processing
+          return;
+        }
+
+        // Reliable Joining: Host automatically adds any player that appears in presence
         if (_isHosting && onPlayerAction != null) {
-          // Construct a join action payload
+          log('Host detecting new player presence: $playerId');
+          // Construct a join action payload from presence data
           final joinAction = {
             'type': 'join',
-            'player': event.data, // event.data is the player map
+            'player': event.data,
           };
           onPlayerAction!(joinAction);
+        }
+
+        if (playerId != null) {
+          onConnectionChange?.call(playerId, true);
         }
       }
 

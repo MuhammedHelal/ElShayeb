@@ -12,7 +12,13 @@ class SupabaseMappers {
     // Assuming pattern: { "event": "broadcast", "payload": { "type": "...", "data": ..., "senderId": "..." } }
 
     // Direct mapping if the payload matches our event structure
-    final type = payload['type'] as String;
+    var type = payload['type'] as String;
+    // Fix: Supabase Realtime overrides 'type' with 'broadcast'.
+    // We Map 'broadcast' back to our internal 'game_action' type if it's the right event.
+    if (type == 'broadcast' && payload['event'] == 'game_event') {
+      type = OnlineEventTypes.gameAction;
+    }
+
     final data = payload['data'] as Map<String, dynamic>? ?? {};
     final senderId = payload['senderId'] as String?;
     final timestampStr = payload['timestamp'] as String?;

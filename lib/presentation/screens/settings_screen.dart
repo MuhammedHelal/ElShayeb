@@ -3,6 +3,7 @@
 /// App settings for audio, vibration, and profile.
 library;
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -63,6 +64,38 @@ class SettingsScreen extends StatelessWidget {
                               },
                               onAvatarChanged: (id) {
                                 context.read<SettingsCubit>().setAvatarId(id);
+                              },
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Language section
+                        _SectionHeader(title: AppStrings.settingsLanguage),
+                        _SettingsCard(
+                          children: [
+                            _LanguageTile(
+                              icon: Icons.language,
+                              title: AppStrings.languageEnglish,
+                              isSelected: context.locale.languageCode == 'en',
+                              onTap: () {
+                                context.setLocale(const Locale('en'));
+                                context
+                                    .read<SettingsCubit>()
+                                    .setLocaleCode('en');
+                              },
+                            ),
+                            const Divider(),
+                            _LanguageTile(
+                              icon: Icons.language,
+                              title: AppStrings.languageArabic,
+                              isSelected: context.locale.languageCode == 'ar',
+                              onTap: () {
+                                context.setLocale(const Locale('ar'));
+                                context
+                                    .read<SettingsCubit>()
+                                    .setLocaleCode('ar');
                               },
                             ),
                           ],
@@ -344,6 +377,33 @@ class _SliderTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Language selection tile
+class _LanguageTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _LanguageTile({
+    required this.icon,
+    required this.title,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: AppColors.secondary),
+      title: Text(title),
+      trailing: isSelected
+          ? const Icon(Icons.check_circle, color: AppColors.secondary)
+          : const Icon(Icons.circle_outlined, color: AppColors.textSecondary),
+      onTap: onTap,
     );
   }
 }
