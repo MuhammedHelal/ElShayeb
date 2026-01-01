@@ -33,7 +33,7 @@ class AssetPaths {
 
   // Music
   static const musicDir = 'assets/music/';
-  static const backgroundMusic = 'assets/music/background.mp3';
+  static const backgroundMusic = 'assets/music/bg.mp3';
 }
 
 /// App constants

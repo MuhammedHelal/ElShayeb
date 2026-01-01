@@ -37,6 +37,7 @@ class AudioManager {
   double _musicVolume = 0.5;
   double _sfxVolume = 0.8;
   bool _isInitialized = false;
+  bool _musicStarted = false;
 
   /// Initialize the audio manager
   Future<void> init() async {
@@ -63,6 +64,7 @@ class AudioManager {
       await _musicPlayer.stop();
       await _musicPlayer.setSource(AssetSource('music/background.mp3'));
       await _musicPlayer.resume();
+      _musicStarted = true;
     } catch (e) {
       log('Error playing background music: $e');
     }
@@ -71,6 +73,7 @@ class AudioManager {
   /// Stop background music
   Future<void> stopBackgroundMusic() async {
     await _musicPlayer.stop();
+    _musicStarted = false;
   }
 
   /// Pause background music
@@ -81,7 +84,13 @@ class AudioManager {
   /// Resume background music
   Future<void> resumeBackgroundMusic() async {
     if (!_isMusicEnabled) return;
-    await _musicPlayer.resume();
+
+    // If music was never started (source not set), play it now
+    if (!_musicStarted) {
+      await playBackgroundMusic();
+    } else {
+      await _musicPlayer.resume();
+    }
   }
 
   /// Play a sound effect
@@ -111,13 +120,13 @@ class AudioManager {
       case SoundEffect.play:
         return 'sounds/play.mp3';
       case SoundEffect.flip:
-        return 'sounds/deal.mp3'; // Use deal sound as flip
+        return 'sounds/deal.mp3';
       case SoundEffect.match:
-        return 'sounds/play.mp3'; // Use play sound as match
+        return 'sounds/match.mp3';
       case SoundEffect.win:
-        return 'sounds/play.mp3'; // Use play sound as win
+        return 'sounds/win.mp3';
       case SoundEffect.lose:
-        return 'sounds/deal.mp3'; // Use deal sound as lose
+        return 'sounds/lose.mp3';
     }
   }
 

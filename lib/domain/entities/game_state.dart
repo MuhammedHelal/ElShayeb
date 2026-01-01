@@ -35,6 +35,8 @@ class GameState extends Equatable {
   final int roundNumber;
   final int nextFinishPosition;
   final String? lastAction;
+  final String? lastActionKey;
+  final Map<String, String>? lastActionParams;
   final DateTime? lastActionTime;
   final String hostId;
 
@@ -47,6 +49,8 @@ class GameState extends Equatable {
     this.roundNumber = 1,
     this.nextFinishPosition = 1,
     this.lastAction,
+    this.lastActionKey,
+    this.lastActionParams,
     this.lastActionTime,
     required this.hostId,
   });
@@ -134,6 +138,8 @@ class GameState extends Equatable {
     int? roundNumber,
     int? nextFinishPosition,
     String? lastAction,
+    String? lastActionKey,
+    Map<String, String>? lastActionParams,
     DateTime? lastActionTime,
     String? hostId,
   }) {
@@ -146,6 +152,8 @@ class GameState extends Equatable {
       roundNumber: roundNumber ?? this.roundNumber,
       nextFinishPosition: nextFinishPosition ?? this.nextFinishPosition,
       lastAction: lastAction ?? this.lastAction,
+      lastActionKey: lastActionKey ?? this.lastActionKey,
+      lastActionParams: lastActionParams ?? this.lastActionParams,
       lastActionTime: lastActionTime ?? this.lastActionTime,
       hostId: hostId ?? this.hostId,
     );
@@ -161,6 +169,8 @@ class GameState extends Equatable {
         roundNumber,
         nextFinishPosition,
         lastAction,
+        lastActionKey,
+        lastActionParams,
         lastActionTime,
         hostId,
       ];
@@ -175,6 +185,8 @@ class GameState extends Equatable {
         'roundNumber': roundNumber,
         'nextFinishPosition': nextFinishPosition,
         'lastAction': lastAction,
+        'lastActionKey': lastActionKey,
+        'lastActionParams': lastActionParams,
         'lastActionTime': lastActionTime?.toIso8601String(),
         'hostId': hostId,
       };
@@ -193,6 +205,10 @@ class GameState extends Equatable {
       roundNumber: json['roundNumber'] as int,
       nextFinishPosition: json['nextFinishPosition'] as int,
       lastAction: json['lastAction'] as String?,
+      lastActionKey: json['lastActionKey'] as String?,
+      lastActionParams: json['lastActionParams'] != null
+          ? Map<String, String>.from(json['lastActionParams'] as Map)
+          : null,
       lastActionTime: json['lastActionTime'] != null
           ? DateTime.parse(json['lastActionTime'] as String)
           : null,
@@ -205,12 +221,18 @@ class GameState extends Equatable {
     required String roomId,
     required String roomCode,
     required String hostId,
+    String? lastAction,
+    String? lastActionKey,
+    Map<String, String>? lastActionParams,
   }) {
     return GameState(
       roomId: roomId,
       roomCode: roomCode,
       players: const [],
       hostId: hostId,
+      lastAction: lastAction,
+      lastActionKey: lastActionKey,
+      lastActionParams: lastActionParams,
     );
   }
 }

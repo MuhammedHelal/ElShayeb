@@ -107,6 +107,9 @@ class GameController {
       roomId: hostPlayer.id,
       roomCode: roomCode,
       hostId: hostPlayer.id,
+      lastAction: '${hostPlayer.name} created the room',
+      lastActionKey: 'event_player_created_room',
+      lastActionParams: {'name': hostPlayer.name},
     );
 
     _state = _rulesEngine.addPlayer(_state, hostPlayer.copyWith(isHost: true));
@@ -174,7 +177,13 @@ class GameController {
     try {
       _state = _rulesEngine.startGame(_state);
 
-      // Notify local listeners first
+      _state = _state.copyWith(
+        lastAction: 'Game started!',
+        lastActionKey: 'event_game_started',
+        lastActionTime: DateTime.now(),
+      );
+
+      // Notify local listeners
       _notifyStateChange();
 
       _emitEvent(GameEvent(
@@ -316,32 +325,57 @@ class GameController {
       // Update state message for synchronization
       _state = _state.copyWith(
         lastAction: message,
+        lastActionKey: messageKey,
+        lastActionParams: messageParams,
         lastActionTime: DateTime.now(),
       );
 
       // Check for player finished
       if (result.updatedDrawer.hand.isEmpty) {
         final finishedMsg = '${result.updatedDrawer.name} finished!';
-        _state = _state.copyWith(lastAction: finishedMsg);
+        const finishedKey = 'event_player_finished';
+        final finishedParams = {'name': result.updatedDrawer.name};
+
+        _state = _state.copyWith(
+          lastAction: finishedMsg,
+          lastActionKey: finishedKey,
+          lastActionParams: finishedParams,
+        );
         _emitEvent(GameEvent(
           type: GameEventType.playerFinished,
           message: finishedMsg,
-          messageKey: 'event_player_finished',
-          messageParams: {'name': result.updatedDrawer.name},
+          messageKey: finishedKey,
+          messageParams: finishedParams,
           data: {'playerId': result.updatedDrawer.id},
         ));
       }
 
       // Check for round end
       if (_state.phase == GamePhase.roundEnd) {
+        final loser = _state.players.firstWhere(
+          (p) => p.status == PlayerStatus.shayeb,
+          orElse: () => _state.players.first,
+        );
+        final loserId = loser.id;
+
         _state = _rulesEngine.applyRoundScores(_state);
         const endMsg = 'Round ended!';
-        _state = _state.copyWith(lastAction: endMsg);
-        _emitEvent(GameEvent(
+        const endKey = 'event_round_ended';
+
+        _state = _state.copyWith(
+          lastAction: endMsg,
+          lastActionKey: endKey,
+        );
+
+        final roundEndEvent = GameEvent(
           type: GameEventType.roundEnded,
           message: endMsg,
-          messageKey: 'event_round_ended',
-        ));
+          messageKey: endKey,
+          data: {'loserId': loserId},
+        );
+
+        _emitEvent(roundEndEvent);
+        _networkManager.broadcastEvent(roundEndEvent);
       }
 
       // Broadcast new state to all clients
@@ -356,7 +390,11 @@ class GameController {
 
     _state = _rulesEngine.startNewRound(_state);
 
-    await _networkManager.broadcastState(_state);
+    _state = _state.copyWith(
+      lastAction: 'New round started!',
+      lastActionKey: 'event_new_round_started',
+      lastActionTime: DateTime.now(),
+    );
 
     _emitEvent(GameEvent(
       type: GameEventType.gameStarted,
@@ -365,6 +403,7 @@ class GameController {
     ));
 
     _notifyStateChange();
+    await _networkManager.broadcastState(_state);
   }
 
   /// Handle state update from network (client receives from host)
@@ -372,11 +411,15 @@ class GameController {
     _stateRequestTimer?.cancel();
     _updateState(newState);
 
-    _emitEvent(GameEvent(
-      type: GameEventType.stateSync,
-      message: newState.lastAction ?? 'State synchronized',
-      messageKey: 'event_state_sync',
-    ));
+    // Only emit stateSync event if there's no lastAction message to display
+    // If there is one, _updateState already handled it via _handleStateUpdate
+    if (newState.lastAction == null || newState.lastAction!.isEmpty) {
+      _emitEvent(GameEvent(
+        type: GameEventType.stateSync,
+        message: 'State synchronized',
+        messageKey: 'event_state_sync',
+      ));
+    }
   }
 
   /// Handle game event from network (client receives from host)
@@ -391,6 +434,12 @@ class GameController {
     if (!_isHost) return;
 
     final type = action['type'] as String?;
+    final playerId = action['playerId'] as String?;
+
+    // Mark player as connected when they send any action
+    if (playerId != null) {
+      _handleConnectionChange(playerId, true);
+    }
 
     switch (type) {
       case 'draw':
@@ -405,10 +454,13 @@ class GameController {
         _handlePlayerJoin(player);
         break;
       case 'shuffle':
-        final playerId = action['playerId'] as String;
-        _executeShuffleAction(playerId);
+        // playerId already handled above
+        if (playerId != null) {
+          _executeShuffleAction(playerId);
+        }
         break;
       case 'request_state':
+        // Connection status already marked. Just broadcast.
         _networkManager.broadcastState(_state);
         break;
     }
@@ -435,11 +487,17 @@ class GameController {
     final player = _state.getPlayerById(playerId);
     if (player != null) {
       final updatedPlayer = _rulesEngine.shufflePlayerHand(player);
+      final shuffleMsg = '${player.name} shuffled their hand';
+      const shuffleKey = 'event_player_shuffled';
+      final shuffleParams = {'name': player.name};
+
       _state = _state.copyWith(
         players: _state.players
             .map((p) => p.id == updatedPlayer.id ? updatedPlayer : p)
             .toList(),
-        lastAction: '${player.name} shuffled their hand',
+        lastAction: shuffleMsg,
+        lastActionKey: shuffleKey,
+        lastActionParams: shuffleParams,
         lastActionTime: DateTime.now(),
       );
 
@@ -452,8 +510,22 @@ class GameController {
   void _handlePlayerJoin(Player player) {
     if (!_isHost) return;
 
+    // If player is already in the game, just update their connection status
+    if (_state.players.any((p) => p.id == player.id)) {
+      log('GameController: Player ${player.name} re-joining, updating connection status');
+      _handleConnectionChange(player.id, true);
+      return;
+    }
+
     if (_rulesEngine.canPlayerJoin(_state, player.id)) {
       _state = _rulesEngine.addPlayer(_state, player);
+
+      _state = _state.copyWith(
+        lastAction: '${player.name} joined the game',
+        lastActionKey: 'event_player_joined',
+        lastActionParams: {'name': player.name},
+        lastActionTime: DateTime.now(),
+      );
 
       _networkManager.broadcastState(_state);
 
@@ -472,25 +544,75 @@ class GameController {
   /// Handle connection changes
   void _handleConnectionChange(String playerId, bool connected) {
     final player = _state.getPlayerById(playerId);
-    if (player == null) return;
+    if (player == null) {
+      log('GameController: Player $playerId not found for connection change (connected: $connected)');
+      return;
+    }
 
-    final players = _state.players.map((p) {
-      if (p.id == playerId) {
-        return p.copyWith(isConnected: connected);
-      }
-      return p;
-    }).toList();
+    // Check if status actually changed
+    bool statusChanged = player.isConnected != connected;
 
-    _updateState(_state.copyWith(players: players));
+    if (statusChanged) {
+      log('GameController: Connection status changed for ${player.name} ($playerId) to ${connected ? 'CONNECTED' : 'DISCONNECTED'}');
+      final players = _state.players.map((p) {
+        if (p.id == playerId) {
+          return p.copyWith(isConnected: connected);
+        }
+        return p;
+      }).toList();
 
-    if (!connected) {
-      _emitEvent(GameEvent(
-        type: GameEventType.playerLeft,
-        message: '${player.name} disconnected',
-        messageKey: 'event_player_disconnected',
-        messageParams: {'name': player.name},
-        data: {'playerId': playerId},
+      final message =
+          '${player.name} ${connected ? 'reconnected' : 'disconnected'}';
+      final messageKey =
+          connected ? 'event_player_reconnected' : 'event_player_disconnected';
+      final messageParams = {'name': player.name};
+
+      _updateState(_state.copyWith(
+        players: players,
+        lastAction: message,
+        lastActionKey: messageKey,
+        lastActionParams: messageParams,
       ));
+    }
+
+    // If host, broadcast state and events to all clients
+    if (_isHost) {
+      // 1. If status changed, always broadcast new state
+      if (statusChanged) {
+        log('GameController: Host broadcasting state change for $playerId');
+        _networkManager.broadcastState(_state);
+
+        // 2. Emit and broadcast discrete event for the message
+        final gameEvent = GameEvent(
+          type:
+              connected ? GameEventType.playerJoined : GameEventType.playerLeft,
+          message:
+              '${player.name} ${connected ? 'reconnected' : 'disconnected'}',
+          messageKey: connected
+              ? 'event_player_reconnected'
+              : 'event_player_disconnected',
+          messageParams: {'name': player.name},
+          data: {'playerId': playerId},
+        );
+
+        _emitEvent(gameEvent); // Local UI
+        _networkManager.broadcastEvent(gameEvent); // All clients UI
+      }
+    } else {
+      // On client, just emit local event if status changed
+      if (statusChanged) {
+        _emitEvent(GameEvent(
+          type:
+              connected ? GameEventType.playerJoined : GameEventType.playerLeft,
+          message:
+              '${player.name} ${connected ? 'reconnected' : 'disconnected'}',
+          messageKey: connected
+              ? 'event_player_reconnected'
+              : 'event_player_disconnected',
+          messageParams: {'name': player.name},
+          data: {'playerId': playerId},
+        ));
+      }
     }
   }
 

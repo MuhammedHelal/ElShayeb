@@ -225,6 +225,12 @@ class OnlineNetworkManager implements NetworkManager {
         if (data.containsKey('isPlayerAction') && _isHosting) {
           log('Processing Player Action as Host');
           final action = data['actionPayload'] as Map<String, dynamic>;
+
+          // Ensure playerId is present, fallback to event.senderId
+          if (!action.containsKey('playerId') && event.senderId != null) {
+            action['playerId'] = event.senderId;
+          }
+
           onPlayerAction?.call(action);
           return;
         }
@@ -232,9 +238,10 @@ class OnlineNetworkManager implements NetworkManager {
 
       // 3. Player Joined (Presence)
       if (event.type == OnlineEventTypes.playerJoined) {
-        log('Player Joined Event (Presence): ${event.data}');
-
         final playerId = event.senderId;
+        final playerName = event.data['name'] ?? 'Unknown';
+        log('OnlineNetworkManager: Player Joined (Presence): $playerName ($playerId)');
+
         if (playerId == _localPlayerId) {
           // Ignore our own presence event to prevent double-processing
           return;
@@ -242,7 +249,7 @@ class OnlineNetworkManager implements NetworkManager {
 
         // Reliable Joining: Host automatically adds any player that appears in presence
         if (_isHosting && onPlayerAction != null) {
-          log('Host detecting new player presence: $playerId');
+          log('OnlineNetworkManager: Host detecting new player presence: $playerId');
           // Construct a join action payload from presence data
           final joinAction = {
             'type': 'join',
@@ -259,6 +266,7 @@ class OnlineNetworkManager implements NetworkManager {
       // 4. Player Left
       if (event.type == OnlineEventTypes.playerLeft) {
         final playerId = event.senderId;
+        log('OnlineNetworkManager: Player Left (Presence): $playerId');
         if (playerId != null) {
           onConnectionChange?.call(playerId, false);
         }
@@ -270,7 +278,21 @@ class OnlineNetworkManager implements NetworkManager {
 
   void _handleConnectionState(OnlineConnectionState state) {
     log('Connection State: ${state.status}');
-    if (state.status == OnlineConnectionStatus.disconnected ||
+    if (state.status == OnlineConnectionStatus.connected) {
+      // If we re-connected and are NOT the host, request the latest state
+      // This handles cases where we went AFK and missed some state updates
+      if (!_isHosting && _localPlayerId != null) {
+        log('OnlineNetworkManager: Re-connected, requesting latest state from host');
+        sendAction({
+          'type': 'request_state',
+          'playerId': _localPlayerId,
+        });
+      }
+
+      if (_localPlayerId != null) {
+        onConnectionChange?.call(_localPlayerId!, true);
+      }
+    } else if (state.status == OnlineConnectionStatus.disconnected ||
         state.status == OnlineConnectionStatus.error) {
       // Maybe notify UI of disconnection
       if (_localPlayerId != null) {

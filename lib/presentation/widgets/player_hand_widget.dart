@@ -85,29 +85,32 @@ class PlayerHandWidget extends StatelessWidget {
         child: SizedBox(
           width: handWidth.clamp(0, maxWidth),
           height: cardHeight + 20,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: List.generate(cards.length, (index) {
-              final card = cards[index];
-              final isSelected = selectedIndex == index;
-              final isMatched = matchedCardIds.contains(card.id);
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: List.generate(cards.length, (index) {
+                final card = cards[index];
+                final isSelected = selectedIndex == index;
+                final isMatched = matchedCardIds.contains(card.id);
 
-              return AnimatedPositioned(
-                key: ValueKey(card.id),
-                duration: const Duration(milliseconds: 500),
-                curve: Curves.elasticOut,
-                left: index * effectiveCardWidth,
-                bottom: isSelected ? 10 : 0,
-                child: PlayingCardWidget(
-                  card: card,
-                  isSelected: isSelected,
-                  showMatchAnimation: isMatched,
-                  onTap: isInteractive ? () => onCardTap?.call(index) : null,
-                  width: cardWidth,
-                  height: cardHeight,
-                ),
-              );
-            }),
+                return AnimatedPositioned(
+                  key: ValueKey(card.id),
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.elasticOut,
+                  left: index * effectiveCardWidth,
+                  bottom: isSelected ? 10 : 0,
+                  child: PlayingCardWidget(
+                    card: card,
+                    isSelected: isSelected,
+                    showMatchAnimation: isMatched,
+                    onTap: isInteractive ? () => onCardTap?.call(index) : null,
+                    width: cardWidth,
+                    height: cardHeight,
+                  ),
+                );
+              }),
+            ),
           ),
         ),
       ),
@@ -158,26 +161,29 @@ class OpponentHandWidget extends StatelessWidget {
         child: SizedBox(
           width: cardWidth * 1.5 + (cardCount - 1) * 8,
           height: cardHeight * 1.2,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: List.generate(cardCount.clamp(0, 10), (index) {
-              final angle =
-                  (index - (cardCount - 1) / 2) * arcAngle / cardCount;
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: List.generate(cardCount.clamp(0, 10), (index) {
+                final angle =
+                    (index - (cardCount - 1) / 2) * arcAngle / cardCount;
 
-              return AnimatedPositioned(
-                key: ValueKey('opponent_card_$index'),
-                duration: const Duration(milliseconds: 400),
-                left: index * 8.0,
-                child: Transform.rotate(
-                  angle: angle,
-                  child: PlayingCardWidget(
-                    faceUp: false,
-                    width: cardWidth,
-                    height: cardHeight,
+                return AnimatedPositioned(
+                  key: ValueKey('opponent_card_$index'),
+                  duration: const Duration(milliseconds: 400),
+                  left: index * 8.0,
+                  child: Transform.rotate(
+                    angle: angle,
+                    child: PlayingCardWidget(
+                      faceUp: false,
+                      width: cardWidth,
+                      height: cardHeight,
+                    ),
                   ),
-                ),
-              );
-            }),
+                );
+              }),
+            ),
           ),
         ),
       ),

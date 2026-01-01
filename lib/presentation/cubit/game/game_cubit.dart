@@ -438,7 +438,11 @@ class GameCubit extends Cubit<GameUiState> {
   /// Handle game events from controller
   void _handleGameEvent(GameEvent event) {
     // Translate event message using localization key if available
-    final localizedMessage = _getLocalizedEventMessage(event);
+    final localizedMessage = _getLocalizedMessage(
+      event.message,
+      event.messageKey,
+      event.messageParams,
+    );
 
     // Helper to safely play sound
     void safePlaySound(SoundEffect effect) {
@@ -487,8 +491,19 @@ class GameCubit extends Cubit<GameUiState> {
         break;
 
       case GameEventType.roundEnded:
+        final loserId = event.data?['loserId'] as String?;
         final localPlayer = state.localPlayer;
-        if (localPlayer?.isShayeb == true) {
+
+        // If we have loserId in event data, use it.
+        // Otherwise fallback to checking local player status (might be delayed)
+        bool didILose = false;
+        if (loserId != null) {
+          didILose = loserId == state.localPlayerId;
+        } else {
+          didILose = localPlayer?.isShayeb == true;
+        }
+
+        if (didILose) {
           safePlaySound(SoundEffect.lose);
           _hapticManager.defeat();
         } else {
@@ -507,27 +522,28 @@ class GameCubit extends Cubit<GameUiState> {
     }
   }
 
-  /// Get localized message from event
-  String _getLocalizedEventMessage(GameEvent event) {
+  /// Get localized message
+  String _getLocalizedMessage(
+    String? fallback,
+    String? key,
+    Map<String, String>? params,
+  ) {
     // If no message key, return fallback message
-    if (event.messageKey == null) {
-      return event.message;
+    if (key == null) {
+      return fallback ?? '';
     }
 
     try {
       // Use the translation key with parameters
-      final key = event.messageKey!;
-      final params = event.messageParams;
-
       if (params != null && params.isNotEmpty) {
         return key.tr(namedArgs: params);
       } else {
         return key.tr();
       }
     } catch (e) {
-      log('Error translating event message: $e');
+      log('Error translating message: $e');
       // Fallback to the English message
-      return event.message;
+      return fallback ?? '';
     }
   }
 
@@ -538,10 +554,16 @@ class GameCubit extends Cubit<GameUiState> {
 
   /// Handle state updates from controller
   void _handleStateUpdate(GameState gameState) {
+    final localizedMessage = _getLocalizedMessage(
+      gameState.lastAction,
+      gameState.lastActionKey,
+      gameState.lastActionParams,
+    );
+
     emit(state.copyWith(
       gameState: gameState,
       status: LoadingStatus.success,
-      lastEventMessage: gameState.lastAction,
+      lastEventMessage: localizedMessage,
       isConnecting: false,
     ));
   }

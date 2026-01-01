@@ -84,26 +84,29 @@ class _PlayingCardWidgetState extends State<PlayingCardWidget>
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: widget.onTap,
-      child: CardAnimatedBuilder(
-        animation: _flipAnimation,
-        builder: (context, child) {
-          final isShowingBack = _flipAnimation.value > 0.5;
-          final rotationAngle = _flipAnimation.value * math.pi;
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: CardAnimatedBuilder(
+          animation: _flipAnimation,
+          builder: (context, child) {
+            final isShowingBack = _flipAnimation.value > 0.5;
+            final rotationAngle = _flipAnimation.value * math.pi;
 
-          return Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.identity()
-              ..setEntry(3, 2, 0.001)
-              ..rotateY(rotationAngle),
-            child: isShowingBack
-                ? Transform(
-                    alignment: Alignment.center,
-                    transform: Matrix4.identity()..rotateY(math.pi),
-                    child: _buildCardBack(),
-                  )
-                : _buildCardFront(),
-          );
-        },
+            return Transform(
+              alignment: Alignment.center,
+              transform: Matrix4.identity()
+                ..setEntry(3, 2, 0.001)
+                ..rotateY(rotationAngle),
+              child: isShowingBack
+                  ? Transform(
+                      alignment: Alignment.center,
+                      transform: Matrix4.identity()..rotateY(math.pi),
+                      child: _buildCardBack(),
+                    )
+                  : _buildCardFront(),
+            );
+          },
+        ),
       ),
     );
   }
@@ -216,6 +219,7 @@ class _PlayingCardWidgetState extends State<PlayingCardWidget>
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
+          textDirection: TextDirection.ltr,
           card.rank.symbol,
           style: TextStyle(
             fontWeight: FontWeight.bold,
@@ -225,6 +229,7 @@ class _PlayingCardWidgetState extends State<PlayingCardWidget>
           ),
         ),
         Text(
+          textDirection: TextDirection.ltr,
           card.suit.symbol,
           style: TextStyle(
             fontSize: widget.width * 0.14,

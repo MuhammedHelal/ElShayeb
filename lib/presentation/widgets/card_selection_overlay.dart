@@ -69,76 +69,79 @@ class _CardSelectionOverlayState extends State<CardSelectionOverlay>
       child: Material(
         color: Colors.black.withOpacity(0.85),
         child: SafeArea(
-          child: Column(
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    // Close button
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: IconButton(
-                        onPressed: widget.onCancel,
-                        icon: const Icon(Icons.close, size: 28),
-                        style: IconButton.styleFrom(
-                          backgroundColor: AppColors.surface,
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: Column(
+              children: [
+                // Header
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      // Close button
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: IconButton(
+                          onPressed: widget.onCancel,
+                          icon: const Icon(Icons.close, size: 28),
+                          style: IconButton.styleFrom(
+                            backgroundColor: AppColors.surface,
+                          ),
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    // Player info
-                    _buildPlayerInfo(),
+                      // Player info
+                      _buildPlayerInfo(),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Instructions
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: AppColors.goldGradient,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.touch_app,
-                              color: AppColors.textDark),
-                          const SizedBox(width: 8),
-                          Text(
-                            AppStrings.gameYourTurn,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textDark,
-                              fontSize: 16,
+                      // Instructions
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: AppColors.goldGradient,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.touch_app,
+                                color: AppColors.textDark),
+                            const SizedBox(width: 8),
+                            Text(
+                              AppStrings.gameYourTurn,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textDark,
+                                fontSize: 16,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Cards area
-              Expanded(
-                child: Center(
-                  child: ScaleTransition(
-                    scale: _scaleAnimation,
-                    child: _buildCardFan(cardCount),
+                    ],
                   ),
                 ),
-              ),
 
-              // Bottom padding
-              const SizedBox(height: 80),
-            ],
+                // Cards area
+                Expanded(
+                  child: Center(
+                    child: ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: _buildCardFan(cardCount),
+                    ),
+                  ),
+                ),
+
+                // Bottom padding
+                const SizedBox(height: 80),
+              ],
+            ),
           ),
         ),
       ),
@@ -399,37 +402,40 @@ class _CardRevealOverlayState extends State<CardRevealOverlay>
         animation: Listenable.merge([_revealController, _matchController]),
         builder: (context, child) {
           return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Title
-                Text(
-                  widget.showMatch ? AppStrings.cardMatch : 'You drew:',
-                  style: AppTypography.headlineMedium.copyWith(
-                    color: widget.showMatch
-                        ? AppColors.secondary
-                        : AppColors.textPrimary,
+            child: Directionality(
+              textDirection: TextDirection.ltr,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Title
+                  Text(
+                    widget.showMatch ? AppStrings.cardMatch : 'You drew:',
+                    style: AppTypography.headlineMedium.copyWith(
+                      color: widget.showMatch
+                          ? AppColors.secondary
+                          : AppColors.textPrimary,
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                // Cards
-                if (widget.showMatch && widget.matchedCard != null)
-                  _buildMatchDisplay()
-                else
-                  _buildSingleCard(),
+                  // Cards
+                  if (widget.showMatch && widget.matchedCard != null)
+                    _buildMatchDisplay()
+                  else
+                    _buildSingleCard(),
 
-                const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                // Card name
-                Text(
-                  widget.drawnCard.displayName,
-                  style: AppTypography.displayMedium.copyWith(
-                    color: AppColors.secondary,
+                  // Card name
+                  Text(
+                    widget.drawnCard.displayName,
+                    style: AppTypography.displayMedium.copyWith(
+                      color: AppColors.secondary,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },

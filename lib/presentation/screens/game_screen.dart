@@ -3,6 +3,7 @@
 /// Main in-game screen with table, cards, and player interactions.
 library;
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -43,6 +44,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return BlocBuilder<GameCubit, GameUiState>(
       builder: (context, state) {
+        context.locale; // Register dependency for easy_localization rebuild
         return PopScope(
           canPop: false,
           onPopInvokedWithResult: (didPop, result) {
@@ -390,8 +392,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         //   ),
 
         // Event message - Top Center, non-blocking
-        if (state.lastEventMessage != null &&
-            state.lastEventMessage != "State synchronized")
+        if (state.lastEventMessage != null)
           Positioned(
             top: 0,
             left: 0,

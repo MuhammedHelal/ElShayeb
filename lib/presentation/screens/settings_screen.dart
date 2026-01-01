@@ -17,37 +17,38 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.locale; // Register dependency for easy_localization rebuild
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
           gradient: AppColors.tableGradient,
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              // App bar
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back),
+          child: BlocBuilder<SettingsCubit, SettingsState>(
+            builder: (context, state) {
+              return Column(
+                children: [
+                  // App bar
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.arrow_back),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          AppStrings.settingsTitle,
+                          style: AppTypography.headlineMedium,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      AppStrings.settingsTitle,
-                      style: AppTypography.headlineMedium,
-                    ),
-                  ],
-                ),
-              ),
+                  ),
 
-              // Settings content
-              Expanded(
-                child: BlocBuilder<SettingsCubit, SettingsState>(
-                  builder: (context, state) {
-                    return ListView(
+                  // Settings content
+                  Expanded(
+                    child: ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
                         // Profile section
@@ -207,11 +208,11 @@ class SettingsScreen extends StatelessWidget {
 
                         const SizedBox(height: 32),
                       ],
-                    );
-                  },
-                ),
-              ),
-            ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -409,7 +410,7 @@ class _LanguageTile extends StatelessWidget {
 }
 
 /// Profile settings tile
-class _ProfileTile extends StatelessWidget {
+class _ProfileTile extends StatefulWidget {
   final String name;
   final String avatarId;
   final ValueChanged<String> onNameChanged;
@@ -423,9 +424,40 @@ class _ProfileTile extends StatelessWidget {
   });
 
   @override
+  State<_ProfileTile> createState() => _ProfileTileState();
+}
+
+class _ProfileTileState extends State<_ProfileTile> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.name);
+  }
+
+  @override
+  void didUpdateWidget(_ProfileTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.name != _controller.text) {
+      _controller.text = widget.name;
+      // Keep cursor at the end if we externally update the text
+      _controller.selection = TextSelection.fromPosition(
+        TextPosition(offset: _controller.text.length),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final avatars = ['😀', '😎', '🤠', '👨‍💻', '👩‍🎤', '🧔'];
-    final currentIndex = int.tryParse(avatarId.split('_').last) ?? 1;
+    final currentIndex = int.tryParse(widget.avatarId.split('_').last) ?? 1;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -440,7 +472,7 @@ class _ProfileTile extends StatelessWidget {
               final isSelected = currentIndex == index + 1;
 
               return GestureDetector(
-                onTap: () => onAvatarChanged('avatar_${index + 1}'),
+                onTap: () => widget.onAvatarChanged('avatar_${index + 1}'),
                 child: SizedBox(
                   width: 56,
                   height: 56,
@@ -477,12 +509,12 @@ class _ProfileTile extends StatelessWidget {
 
           // Name input
           TextField(
-            controller: TextEditingController(text: name),
+            controller: _controller,
             decoration: InputDecoration(
               labelText: AppStrings.settingsPlayerName,
               prefixIcon: const Icon(Icons.person),
             ),
-            onChanged: onNameChanged,
+            onChanged: widget.onNameChanged,
           ),
         ],
       ),

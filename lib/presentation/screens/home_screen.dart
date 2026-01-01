@@ -3,6 +3,7 @@
 /// Main menu with mode selection and navigation.
 library;
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -62,6 +63,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    context.locale; // Register dependency for easy_localization rebuild
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -119,19 +121,27 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                             ],
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  'الشايب',
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textDark,
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 18,
+                                    ),
+                                    child: Text(
+                                      AppStrings.appName,
+                                      style: const TextStyle(
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textDark,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                Text(
+                                const Text(
                                   '♠ ♥ ♣ ♦',
                                   style: TextStyle(
                                     fontSize: 16,
