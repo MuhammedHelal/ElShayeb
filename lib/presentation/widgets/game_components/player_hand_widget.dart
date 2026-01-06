@@ -6,8 +6,8 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/card.dart';
-import '../theme/app_theme.dart';
-import 'playing_card_widget.dart';
+import '../../theme/app_theme.dart';
+import '../common/playing_card_widget.dart';
 
 /// Player hand widget showing spread cards
 class PlayerHandWidget extends StatelessWidget {

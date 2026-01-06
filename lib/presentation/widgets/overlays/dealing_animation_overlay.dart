@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../domain/entities/player.dart';
-import 'playing_card_widget.dart';
+import '../common/playing_card_widget.dart';
 
 class DealingAnimationOverlay extends StatefulWidget {
   final List<Player> players;

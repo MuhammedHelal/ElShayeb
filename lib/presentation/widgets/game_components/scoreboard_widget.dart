@@ -5,9 +5,9 @@ library;
 
 import 'package:flutter/material.dart';
 
-import '../../core/localization/localization_service.dart';
-import '../../domain/entities/player.dart';
-import '../theme/app_theme.dart';
+import '../../../core/localization/localization_service.dart';
+import '../../../domain/entities/player.dart';
+import '../../theme/app_theme.dart';
 
 /// Scoreboard widget showing all players sorted by score
 class ScoreboardWidget extends StatelessWidget {

@@ -7,8 +7,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/entities.dart';
-import '../theme/app_theme.dart';
-import 'player_avatar_widget.dart';
+import '../../theme/app_theme.dart';
+import '../common/player_avatar_widget.dart';
 import 'player_hand_widget.dart';
 
 /// Game table widget with circular player arrangement

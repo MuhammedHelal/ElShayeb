@@ -31,7 +31,7 @@ class HapticManager {
   Future<void> init() async {
     if (_isInitialized) return;
 
-    _hasVibrator = await Vibration.hasVibrator() ?? false;
+    _hasVibrator = await Vibration.hasVibrator();
     _isInitialized = true;
   }
 

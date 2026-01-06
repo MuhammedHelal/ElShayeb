@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/localization/localization_service.dart';
 import '../../../domain/entities/player.dart';
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 
 /// Player avatar widget
 class PlayerAvatarWidget extends StatelessWidget {

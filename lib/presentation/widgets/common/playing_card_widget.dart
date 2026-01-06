@@ -8,7 +8,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/card.dart';
-import '../theme/app_theme.dart';
+import '../../theme/app_theme.dart';
 
 /// Playing card widget
 class PlayingCardWidget extends StatefulWidget {
@@ -43,6 +43,7 @@ class _PlayingCardWidgetState extends State<PlayingCardWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _flipController;
   late Animation<double> _flipAnimation;
+  // ignore: unused_field
   bool _showFront = true;
 
   @override

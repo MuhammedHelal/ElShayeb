@@ -7,9 +7,9 @@ library;
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-import '../../domain/entities/player.dart';
-import '../theme/app_theme.dart';
-import 'playing_card_widget.dart';
+import '../../../domain/entities/player.dart';
+import '../../theme/app_theme.dart';
+import '../common/playing_card_widget.dart';
 
 /// Event data for card steal animation
 class CardStealEvent {
