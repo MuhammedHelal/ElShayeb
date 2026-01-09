@@ -201,8 +201,8 @@ class _HomeScreenState extends State<HomeScreen>
                             AppConsts.isTestMode
                                 ? _GameModeButton(
                                     icon: Icons.wifi,
-                                    title: AppStrings.modeLocalWifi,
-                                    subtitle: AppStrings.modeLocalWifiDesc,
+                                    title: 'Crash Test',
+                                    subtitle: 'Crash Test',
                                     onTap: () =>
                                         FirebaseCrashlytics.instance.crash(),
                                   )

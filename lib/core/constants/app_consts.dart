@@ -1,3 +1,3 @@
 abstract class AppConsts {
-  static const bool isTestMode = true;
+  static const bool isTestMode = false;
 }
