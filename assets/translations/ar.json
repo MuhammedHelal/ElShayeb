@@ -2,7 +2,7 @@
     "@@locale": "ar",
     "app_name": "الشايب",
     "app_subtitle": "لعبة كوتشينة مصرية",
-    "version": "v1.0.0",
+    "version": "v1.0.2",
     "mode_local_wifi": "واي فاي محلي",
     "mode_local_wifi_desc": "العب مع صحابك على نفس الشبكة",
     "mode_online": "أونلاين",
@@ -99,7 +99,7 @@
     "settings_vibration": "الاهتزاز",
     "settings_vibration_desc": "اهتزاز مع حركات اللعبة",
     "settings_player_name": "اسم اللاعب",
-    "settings_version": "الإصدار 1.0.0",
+    "settings_version": "الإصدار 1.0.2",
     "settings_game_rules": "قواعد اللعبة",
     "rules_title": "قواعد الشايب",
     "rules_deck_title": "🎴 الكوتشينة",
