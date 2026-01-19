@@ -25,8 +25,7 @@ class DefaultFirebaseOptions {
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
-      case TargetPlatform.iOS:
-        return ios;
+
       case TargetPlatform.macOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for macos - '
@@ -55,14 +54,5 @@ class DefaultFirebaseOptions {
     messagingSenderId: '219952833292',
     projectId: 'elshayeb-9d84a',
     storageBucket: 'elshayeb-9d84a.firebasestorage.app',
-  );
-
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCIjD-GBhhWXXQC1I0lkJXWvik7MRpFNpc',
-    appId: '1:219952833292:ios:24ff6364d78431c8bf1f29',
-    messagingSenderId: '219952833292',
-    projectId: 'elshayeb-9d84a',
-    storageBucket: 'elshayeb-9d84a.firebasestorage.app',
-    iosBundleId: 'dev.moashraf.elshayeb',
   );
 }

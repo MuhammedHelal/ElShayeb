@@ -60,3 +60,8 @@ android {
 flutter {
     source = "../.."
 }
+dependencies {
+    implementation("com.google.android.gms:play-services-games-v2:20.1.2")
+    implementation("com.google.firebase:firebase-analytics")
+    implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
+}
